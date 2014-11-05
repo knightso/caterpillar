@@ -1,0 +1,12 @@
+div.ctpl_area {
+	border: 1px dotted #0000FF;
+}
+div.ctpl_block {
+	border: 1px dotted #FF0000; margin: 2px;
+}
+div.ctpl_block:hover {
+	background-color: Gray;
+}
+div.ctpl_block.mce-edit-focus {
+	background-color: White;
+}

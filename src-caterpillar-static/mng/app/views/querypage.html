@@ -1,0 +1,48 @@
+<div class="panel panel-default">
+  <div class="panel-heading">ページリスト</div>
+  <div class="panel-body">
+   <a href="#/postPage"><button type="button" class="btn btn-default btn-md glyphicon glyphicon-plus">追加</button></a>
+   <button type="button" class="btn btn-default btn-md glyphicon glyphicon-search" ng-click="filtering=!filtering">フィルタ</button>
+  </div>
+
+  <table class="table">
+    <thead ng-show="filtering">
+      <th></th>
+      <th><input type="text" size="6" ng-model="criteria.id" class="form-control" placeholder="ID"></th>
+      <th><input type="text" size="15" ng-model="criteria.name" class="form-control" placeholder="ページ名"></th>
+      <th><input type="text" size="15" ng-model="criteria.alias" class="form-control" placeholder="URL用別名"></th>
+      <th><input type="text" ng-model="criteria.leaf" class="form-control" placeholder="テンプレート"></th>
+      <th></th>
+      <th><button type="button" class="btn btn-default btn-sm glyphicon glyphicon-remove-sign" ng-click="criteria={}"></button></th>
+      <th></th>
+    </thead>
+    <thead style="background-color: #ddd">
+      <th>移動</th>
+      <th>ID</th>
+      <th>ページ名</th>
+      <th>URL用別名</th>
+      <th>テンプレート</th>
+      <th>ルート</th>
+      <th>編集</th>
+      <th>削除</th>
+    </thead>
+    <tbody>
+      <tr ng-repeat="page in pages | filter:(filtering ? criteria : {})">
+        <td><a ng-href="{{page.viewURL}}"><button type="button" class="btn btn-default btn-sm glyphicon glyphicon-play"></button></a></td>
+        <td>{{page.id}}</td>
+        <td>{{page.name}}</td>
+        <td>{{page.alias}}</td>
+        <td>{{page.leaf}}</td>
+        <td ng-if="page.root" ng-mouseover="page._hover=true" ng-mouseleave="page._hover=null">
+          <span class="glyphicon glyphicon-ok"></span>
+        </td>
+        <td ng-if="!page.root" ng-mouseover="page._hover=true" ng-mouseleave="page._hover=null">
+          <button type="button" class="btn btn-default btn-sm glyphicon glyphicon-ok" ng-if="page._hover" ng-click="makeRoot(page)"></span>
+        </td>
+        <td><a ng-href="#/putPage/{{page.id}}"><button type="button" class="btn btn-default btn-sm glyphicon glyphicon-pencil"></button></a></td>
+        <td><button type="button" class="btn btn-default btn-sm glyphicon glyphicon-remove"></button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<a href="#/postPage"><button type="button" class="btn btn-default btn-md glyphicon glyphicon-plus">追加</button></a>

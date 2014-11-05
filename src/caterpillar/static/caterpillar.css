@@ -1,0 +1,47 @@
+/* prefix: ctpl_ */
+
+#ctpl_menu button.btn {
+	position: relative;	/* 基準点 */
+}
+
+button .ctpl_tooltip {
+	display: none;
+
+	position: absolute;
+	top: -45px;
+	right: 0;
+
+	border: 1px solid gray;
+	border-color: black;
+
+	background-color: black;
+}
+
+button:hover .ctpl_tooltip {
+	display: block;
+}
+
+button .ctpl_tooltip_inner {
+	padding: 3px 5px;
+	text-align: center;
+	color: white;
+	text-decoration: none;
+	border-radius: 4px;
+}
+
+button .ctpl_tooltip_arrow {
+	position: absolute;
+	width: 0;
+	height: 0;
+	top: 100%;	/* arrowをtooltip領域の下側に配置する。 */
+	border-color: transparent;
+	border-style: solid;
+}
+
+button .ctpl_tooltip_arrow.ctpl_tooltip_arrow_top {
+	bottom: 0;
+	right: 20px;
+	margin-left: 0;
+	border-width: 5px 5px 0;
+	border-top-color: black;
+}

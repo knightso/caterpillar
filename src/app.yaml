@@ -1,0 +1,45 @@
+application: <your app id>
+version: 1
+runtime: go
+api_version: go1
+default_expiration: "1m"
+
+handlers:
+
+- url: /caterpillar/static/mng/
+  static_files: caterpillar/static/mng/index.html
+  upload: caterpillar/static/mng/index.html
+  login: admin
+
+- url: /caterpillar/static/(.*)
+  static_files: caterpillar/static/\1
+  upload: caterpillar/static/.*
+  login: admin
+
+- url: /caterpillar/api/.*
+  script: _go_app
+  login: admin
+
+- url: /_ah/queue/go/delay
+  script: _go_app
+  login: admin
+
+- url: /caterpillar/.*
+  script: _go_app
+
+- url: /.*\.view
+  script: _go_app
+
+- url: /.*\.edit
+  script: _go_app
+  login: admin
+
+- url: /(.+)
+  static_files: static/\1
+  upload: static/.*
+  application_readable: true
+
+- url: /
+  script: _go_app
+
+
