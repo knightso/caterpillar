@@ -62,6 +62,9 @@ type Wormhole struct {
 
 func init() {
 
+	// set memcache
+	ds.DefaultCache = true
+
 	// TODO consider duplicate Wormhole names
 
 	// read leaves
