@@ -52,7 +52,9 @@ const CTPLR_TMPL = `
 	<p id="ctpl_menu" style="position: fixed; right: 10px; bottom: 20px; clear: both; margin:0px;">
 		{{if .Edit}}{{template "MENUBAR_EDIT_BTNS" .}}{{else}}{{template "MENUBAR_VIEW_BTNS" .}}{{end}}
 	</p>
-	<link href="{{.VendorCSS}}" rel="stylesheet" type="text/css"></link>
+	<!-- TODO remove bootstrap dependency. It may cause conflict with users design. -->
+	<link href="/caterpillar/static/bootstrap/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css"></link>
+	<link href="/caterpillar/static/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css"></link>
 	<link href="/caterpillar/static/caterpillar.css" rel="stylesheet" type="text/css"></link>
 	<script src="/caterpillar/static/tinymce/tinymce.min.js" type="text/javascript"></script>
 	<script src="/caterpillar/static/tinymce_init.js" type="text/javascript"></script>

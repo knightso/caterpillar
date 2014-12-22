@@ -35,8 +35,6 @@ const MNG_ROOT_URL = "/caterpillar/static/mng/"
 
 var pageUrlRegex = regexp.MustCompile(`caterpillar://(\d+)`)
 
-//	<link href="/caterpillar/static/mng/styles/vendor.71c590b0.css" rel="stylesheet" type="text/css"></link>
-
 const CTPLR_TMPL_REPL = `{{if .User}}{{template "CATERPILLAR" .}}{{end}}`
 
 type Leaf struct {
@@ -61,6 +59,9 @@ type Wormhole struct {
 }
 
 func init() {
+
+	// set memcache
+	ds.DefaultCache = true
 
 	// TODO consider duplicate Wormhole names
 
@@ -269,7 +270,7 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 		paKey := model.NewPageAliasKey(c, id)
 		var pa model.PageAlias
 		if err := ds.Get(c, paKey, &pa); err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			handleError(c, w, err, http.StatusNotFound)
 			return
 		}
 		pID = pa.PageKey.IntID()
@@ -280,7 +281,7 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 
 	var p model.Page
 	if err := ds.Get(c, pageKey, &p); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		handleError(c, w, err, http.StatusNotFound)
 		return
 	}
 
@@ -299,14 +300,13 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 	leaf := leaves[p.Leaf]
 	if leaf == nil {
 		errmsg := fmt.Sprintf("leaf not found:" + p.Leaf)
-		http.Error(w, errmsg, http.StatusNotFound)
+		handleError(c, w, errors.New(errmsg), http.StatusNotFound)
 		return
 	}
 
 	tparam := struct {
 		Properties map[string]interface{}
 		Areas      map[string]interface{}
-		VendorCSS  string
 		User       *user.User
 		Edit       bool
 		PageID     int64
@@ -317,8 +317,6 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 	}{
 		make(map[string]interface{}),
 		make(map[string]interface{}),
-		// TODO get css file name below on initialization
-		"/caterpillar/static/mng/styles/vendor.71c590b0.css",
 		u,
 		edit,
 		pID,
@@ -442,7 +440,7 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	if err = leaf.Template.Execute(w, tparam); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -484,10 +482,10 @@ func defaultPage(params martini.Params, u *user.User, c appengine.Context, w htt
 	rpkey := model.NewRootPageKey(c)
 	var rp model.RootPage
 	if err := ds.Get(c, rpkey, &rp); err != nil {
-		if errors.WrapOr(err) == datastore.ErrNoSuchEntity {
+		if errors.Root(err) == datastore.ErrNoSuchEntity {
 			login(c, w, r)
 		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -611,4 +609,11 @@ func getPageAsync(c appengine.Context, key *datastore.Key) <-chan func() (*model
 		}
 	}()
 	return ch
+}
+
+func handleError(c appengine.Context, w http.ResponseWriter, err error, code int) {
+	if e, ok := err.(errors.Error); ok {
+		c.Errorf(e.ErrorWithStackTrace())
+	}
+	http.Error(w, err.Error(), code)
 }

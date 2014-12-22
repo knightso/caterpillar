@@ -23,7 +23,9 @@ var (
 	ErrPageAliasAlreadyExists = errors.New("caterpillar: Page alias already exists")
 )
 
-func queryLeaves(w http.ResponseWriter) {
+func queryLeaves(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+
 	// TODO: cannot marshall array?
 	responseJson := "["
 	index := 1
@@ -34,7 +36,7 @@ func queryLeaves(w http.ResponseWriter) {
 
 		b, err := json.Marshal(*value)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 		whs := string(b)
@@ -46,13 +48,14 @@ func queryLeaves(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_, err := w.Write([]byte(responseJson))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 	return
 }
 
 func queryProperty(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
 
 	pn := params["name"]
 	if pn != "" {
@@ -64,13 +67,13 @@ func queryProperty(params martini.Params, w http.ResponseWriter, r *http.Request
 		var gpp model.PageProperty
 		err := ds.Get(c, gpropKey, &gpp)
 		if err != nil && errors.Root(err) != datastore.ErrNoSuchEntity {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 
 		b, err := json.Marshal(gpp)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 		responseJson := string(b)
@@ -78,11 +81,11 @@ func queryProperty(params martini.Params, w http.ResponseWriter, r *http.Request
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_, err = w.Write([]byte(responseJson))
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 	} else {
-		http.Error(w, "error: property name not found.", http.StatusInternalServerError)
+		handleError(c, w, errors.New("error: property name not found."), http.StatusInternalServerError)
 		return
 	}
 
@@ -90,18 +93,19 @@ func queryProperty(params martini.Params, w http.ResponseWriter, r *http.Request
 }
 
 func getPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+
 	if r.Method != "GET" {
-		http.Error(w, "error: illegal access.", http.StatusInternalServerError)
+		handleError(c, w, errors.New("error: illegal access."), http.StatusInternalServerError)
 		return
 	}
 
-	c := appengine.NewContext(r)
 	keyIDStr := params["key"]
 	if keyIDStr != "" {
 		// get page from datastore
 		intID, err := strconv.ParseInt(keyIDStr, 10, 64)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 
@@ -109,13 +113,13 @@ func getPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
 
 		var p model.Page
 		if err := ds.Get(c, key, &p); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 
 		props, err := getPageProperties(c, key)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 
@@ -124,7 +128,7 @@ func getPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
 		var rp model.RootPage
 		err = ds.Get(c, rpkey, &rp)
 		if err != nil && errors.Root(err) != datastore.ErrNoSuchEntity {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 
@@ -132,7 +136,7 @@ func getPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
 
 		b, err := json.Marshal(jsonPage)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 		pageJson := string(b)
@@ -140,11 +144,11 @@ func getPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_, err = w.Write([]byte(pageJson))
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 			return
 		}
 	} else {
-		http.Error(w, "error: key string not found.", http.StatusInternalServerError)
+		handleError(c, w, errors.New("error: key string not found."), http.StatusInternalServerError)
 		return
 	}
 
@@ -160,14 +164,14 @@ func queryPages(w http.ResponseWriter, r *http.Request) {
 	var rp model.RootPage
 	err := ds.Get(c, rpkey, &rp)
 	if err != nil && errors.Root(err) != datastore.ErrNoSuchEntity {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 
 	pages, err := getPages(c)
 	if err != nil {
 		c.Errorf(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -179,43 +183,45 @@ func queryPages(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(jsonPages)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_, err = w.Write(b)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 	return
 }
 
 func postPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+
 	var jp model.JsonPage
 	if err := getRequestJson(w, r, &jp); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(c, w, err, http.StatusBadRequest)
 		return
 	}
 
 	keyIDStr := params["key"]
 	if keyIDStr != "" {
-		http.Error(w, fmt.Sprintf("register page did not need pageID=%s", keyIDStr), http.StatusInternalServerError)
+		handleError(c, w, 
+			errors.New(fmt.Sprintf("register page did not need pageID=%s", keyIDStr)), http.StatusInternalServerError)
 		return
 	}
 
-	c := appengine.NewContext(r)
 	pageKey, err := model.GeneratePageID(c)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 	if err := savePage(c, pageKey, jp.Page, jp.Properties); err != nil {
 		if err == ErrPageAliasAlreadyExists {
-			http.Error(w, err.Error(), http.StatusConflict)
+			handleError(c, w, err, http.StatusConflict)
 		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -224,27 +230,27 @@ func postPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
 func putPage(c appengine.Context, params martini.Params, w http.ResponseWriter, r *http.Request) {
 	var jp model.JsonPage
 	if err := getRequestJson(w, r, &jp); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(c, w, err, http.StatusBadRequest)
 		return
 	}
 
 	keyIDStr := params["key"]
 	if keyIDStr == "" {
-		http.Error(w, "pageID not found.", http.StatusBadRequest)
+		handleError(c, w, errors.New("pageID not found."), http.StatusBadRequest)
 		return
 	}
 
 	intID, err := strconv.ParseInt(keyIDStr, 10, 64)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(c, w, err, http.StatusBadRequest)
 		return
 	}
 	pageKey := model.NewPageKey(c, intID)
 	if err := savePage(c, pageKey, jp.Page, jp.Properties); err != nil {
 		if err == ErrPageAliasAlreadyExists {
-			http.Error(w, err.Error(), http.StatusConflict)
+			handleError(c, w, err, http.StatusConflict)
 		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(c, w, err, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -253,12 +259,12 @@ func putPage(c appengine.Context, params martini.Params, w http.ResponseWriter, 
 func putRootPage(c appengine.Context, w http.ResponseWriter, r *http.Request) {
 	var rp model.RootPage
 	if err := getRequestJson(w, r, &rp); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(c, w, err, http.StatusBadRequest)
 		return
 	}
 
 	if rp.PageID == 0 {
-		http.Error(w, "pageID not found.", http.StatusBadRequest)
+		handleError(c, w, errors.New("pageID not found."), http.StatusBadRequest)
 		return
 	}
 
@@ -283,36 +289,36 @@ func putRootPage(c appengine.Context, w http.ResponseWriter, r *http.Request) {
 		return nil
 	}, nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 }
 
 func saveBlocks(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
 
 	keyIDStr := params["key"]
 	if keyIDStr == "" {
-		http.Error(w, "the pageID not found.", http.StatusInternalServerError)
+		handleError(c, w, errors.New("the pageID not found."), http.StatusInternalServerError)
 		return
 	}
 
 	var b map[string]interface{}
 	if err := getRequestJson(w, r, &b); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(c, w, err, http.StatusBadRequest)
 		return
 	}
 
-	c := appengine.NewContext(r)
 	intID, err := strconv.ParseInt(keyIDStr, 10, 64)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(c, w, err, http.StatusBadRequest)
 		return
 	}
 	pageKey := model.NewPageKey(c, intID)
 
 	var p model.Page
 	if err := ds.Get(c, pageKey, &p); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(c, w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -370,7 +376,7 @@ func saveBlocks(params martini.Params, w http.ResponseWriter, r *http.Request) {
 		return nil
 	}, &datastore.TransactionOptions{XG: true})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
 }
@@ -406,7 +412,7 @@ func savePage(c appengine.Context, pageKey *datastore.Key, p *model.Page, props 
 		var p2 model.Page
 		if !pageKey.Incomplete() {
 			if err := ds.Get(c, pageKey, &p2); err != nil {
-				if errors.WrapOr(err) != datastore.ErrNoSuchEntity {
+				if errors.Root(err) != datastore.ErrNoSuchEntity {
 					return errors.WrapOr(err)
 				} else {
 					p2 = model.Page{}
