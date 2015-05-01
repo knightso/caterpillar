@@ -6,7 +6,7 @@
 		language: 'ja',
 		selector: 'div.ctpl_block',
 		plugins: [
-		  'advlist autolink lists link image charmap print preview anchor',
+		  'advlist autolink lists link image charmap print preview hr anchor',
 		  'searchreplace visualblocks code fullscreen',
 		  'insertdatetime media table contextmenu paste textcolor colorpicker'
 		],
