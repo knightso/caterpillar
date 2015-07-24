@@ -1,13 +1,14 @@
 package filemanager
 
 import (
-	"appengine"
-	"appengine/datastore"
 	"encoding/json"
 	"fmt"
 	"net/url"
 
 	"github.com/knightso/base/gae/ds"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 const (
@@ -48,16 +49,16 @@ func (i *File) setThumbnailURL(size int, isCrop bool) error {
 	return nil
 }
 
-func GetParentKey(c appengine.Context) *datastore.Key {
+func GetParentKey(c context.Context) *datastore.Key {
 	return datastore.NewKey(c, KIND_FILE, "/", 0, nil)
 }
 
-func NewFileKey(c appengine.Context, parentKey *datastore.Key) *datastore.Key {
+func NewFileKey(c context.Context, parentKey *datastore.Key) *datastore.Key {
 	return datastore.NewIncompleteKey(c, KIND_FILE, parentKey)
 }
 
 // アップロードされた画像のメタデータをDSに保存します。
-func StoreImage(c appengine.Context, servingURL, fileName, gcsPath string) error {
+func StoreImage(c context.Context, servingURL, fileName, gcsPath string) error {
 	e := File{
 		ServingURL: servingURL,
 		FileName:   fileName,
@@ -66,7 +67,7 @@ func StoreImage(c appengine.Context, servingURL, fileName, gcsPath string) error
 	}
 
 	e.Key = NewFileKey(c, GetParentKey(c))
-	if err := ds.Put(c, &e);err != nil {
+	if err := ds.Put(c, &e); err != nil {
 		return err
 	}
 
@@ -75,7 +76,7 @@ func StoreImage(c appengine.Context, servingURL, fileName, gcsPath string) error
 
 // 画像のメタデータ一覧をDSから取得します。
 // TODO: 表示する画像数を絞る必要がないなら、Cursor必要ないかも。
-func GetImages(c appengine.Context, cursorStr string) ([]File, string, error) {
+func GetImages(c context.Context, cursorStr string) ([]File, string, error) {
 	parentKey := GetParentKey(c)
 	q := datastore.NewQuery(KIND_FILE).Ancestor(parentKey).Filter("Type =", IMAGE).Order("-CreatedAt")
 
@@ -99,13 +100,13 @@ func GetImages(c appengine.Context, cursorStr string) ([]File, string, error) {
 			break
 		}
 		if err != nil {
-			c.Errorf("fetching next File: %s", err.Error())
+			log.Errorf(c, "fetching next File: %s", err.Error())
 			break
 		}
 
 		err = img.setThumbnailURL(thumbnailsLongestSide, false)
 		if err != nil {
-			c.Errorf("%s", err.Error())
+			log.Errorf(c, "%s", err.Error())
 			break
 		}
 		images = append(images, img)
@@ -114,7 +115,7 @@ func GetImages(c appengine.Context, cursorStr string) ([]File, string, error) {
 	if isNext {
 		next_cursor, err := iter.Cursor()
 		if err != nil {
-			c.Errorf("%s", err.Error())
+			log.Errorf(c, "%s", err.Error())
 			return []File{}, "", err
 		}
 		return images, next_cursor.String(), nil
@@ -129,11 +130,11 @@ type ResponseData struct {
 }
 
 // ファイルの一覧をクライアントに返すため、FileのスライスをJSONシリアライズします。
-func CreateJSONResponse(c appengine.Context, images []File, cursor string) ([]byte, error) {
+func CreateJSONResponse(c context.Context, images []File, cursor string) ([]byte, error) {
 	fl := &ResponseData{Files: images, Cursor: cursor}
 	res, err := json.Marshal(fl)
 	if err != nil {
-		c.Errorf("%s", err.Error())
+		log.Errorf(c, "%s", err.Error())
 		return []byte{}, err
 	}
 

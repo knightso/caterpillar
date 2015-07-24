@@ -9,14 +9,16 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"appengine"
-	"appengine/datastore"
-	"appengine/delay"
 	"caterpillar/model"
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/go-martini/martini"
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/delay"
+	"google.golang.org/appengine/log"
 )
 
 var (
@@ -170,7 +172,7 @@ func queryPages(w http.ResponseWriter, r *http.Request) {
 
 	pages, err := getPages(c)
 	if err != nil {
-		c.Errorf(err.Error())
+		log.Errorf(c, err.Error())
 		handleError(c, w, err, http.StatusInternalServerError)
 		return
 	}
@@ -207,7 +209,7 @@ func postPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
 
 	keyIDStr := params["key"]
 	if keyIDStr != "" {
-		handleError(c, w, 
+		handleError(c, w,
 			errors.New(fmt.Sprintf("register page did not need pageID=%s", keyIDStr)), http.StatusInternalServerError)
 		return
 	}
@@ -227,7 +229,7 @@ func postPage(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func putPage(c appengine.Context, params martini.Params, w http.ResponseWriter, r *http.Request) {
+func putPage(c context.Context, params martini.Params, w http.ResponseWriter, r *http.Request) {
 	var jp model.JsonPage
 	if err := getRequestJson(w, r, &jp); err != nil {
 		handleError(c, w, err, http.StatusBadRequest)
@@ -256,7 +258,7 @@ func putPage(c appengine.Context, params martini.Params, w http.ResponseWriter, 
 	}
 }
 
-func putRootPage(c appengine.Context, w http.ResponseWriter, r *http.Request) {
+func putRootPage(c context.Context, w http.ResponseWriter, r *http.Request) {
 	var rp model.RootPage
 	if err := getRequestJson(w, r, &rp); err != nil {
 		handleError(c, w, err, http.StatusBadRequest)
@@ -270,7 +272,7 @@ func putRootPage(c appengine.Context, w http.ResponseWriter, r *http.Request) {
 
 	rootPageKey := model.NewRootPageKey(c)
 
-	err := datastore.RunInTransaction(c, func(c appengine.Context) error {
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
 		var rp2put model.RootPage
 		if err := ds.Get(c, rootPageKey, &rp2put); err != nil {
 			if errors.Root(err) != datastore.ErrNoSuchEntity {
@@ -322,10 +324,10 @@ func saveBlocks(params martini.Params, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = datastore.RunInTransaction(c, func(c appengine.Context) error {
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		// TODO make async
 		for id, value := range b {
-			c.Infof("saving block. id:%s, value:%s", id, value)
+			log.Infof(c, "saving block. id:%s, value:%s", id, value)
 			r := regexp.MustCompile(`^ctpl_block:(true|false):(\w+):(\d+)$`)
 			gr := r.FindStringSubmatch(id)
 			if gr == nil {
@@ -381,7 +383,7 @@ func saveBlocks(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var backupHTMLBlockFunc = delay.Func("backup", func(c appengine.Context, uuid string, blocks []*model.HTMLBlock) error {
+var backupHTMLBlockFunc = delay.Func("backup", func(c context.Context, uuid string, blocks []*model.HTMLBlock) error {
 	for i, block := range blocks {
 		backupKey := model.NewHTMLBlockBackupKey(c, fmt.Sprintf("%s-%02d", uuid, i))
 		var backup model.HTMLBlockBackup
@@ -389,7 +391,7 @@ var backupHTMLBlockFunc = delay.Func("backup", func(c appengine.Context, uuid st
 		backup.HTMLBlock = *block
 		// without nds cache
 		if _, err := datastore.Put(c, backupKey, &backup); err != nil {
-			c.Errorf(err.Error())
+			log.Errorf(c, err.Error())
 			return err
 		}
 	}
@@ -406,9 +408,9 @@ func getRequestJson(w http.ResponseWriter, r *http.Request, p interface{}) error
 	return nil
 }
 
-func savePage(c appengine.Context, pageKey *datastore.Key, p *model.Page, props map[string]string) error {
+func savePage(c context.Context, pageKey *datastore.Key, p *model.Page, props map[string]string) error {
 
-	err := datastore.RunInTransaction(c, func(c appengine.Context) error {
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
 		var p2 model.Page
 		if !pageKey.Incomplete() {
 			if err := ds.Get(c, pageKey, &p2); err != nil {
@@ -503,7 +505,7 @@ func savePage(c appengine.Context, pageKey *datastore.Key, p *model.Page, props 
 	return nil
 }
 
-func getPageProperties(c appengine.Context, pageKey *datastore.Key) ([]*model.PageProperty, error) {
+func getPageProperties(c context.Context, pageKey *datastore.Key) ([]*model.PageProperty, error) {
 	q := datastore.NewQuery(model.KIND_PAGE_PROPERTY).Ancestor(pageKey)
 
 	var props []*model.PageProperty
@@ -514,7 +516,7 @@ func getPageProperties(c appengine.Context, pageKey *datastore.Key) ([]*model.Pa
 	return props, nil
 }
 
-func getPages(c appengine.Context) ([]*model.Page, error) {
+func getPages(c context.Context) ([]*model.Page, error) {
 	q := datastore.NewQuery(model.KIND_PAGE)
 
 	var pages []*model.Page

@@ -1,15 +1,9 @@
 package caterpillar
 
 import (
-	"appengine"
-	"appengine/datastore"
-	"appengine/user"
 	"caterpillar/common"
 	"caterpillar/model"
 	"fmt"
-	"github.com/go-martini/martini"
-	"github.com/knightso/base/gae/ds"
-	"github.com/knightso/base/errors"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -21,6 +15,15 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/go-martini/martini"
+	"github.com/knightso/base/errors"
+	"github.com/knightso/base/gae/ds"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	applog "google.golang.org/appengine/log"
+	"google.golang.org/appengine/user"
 )
 
 var leaves map[string]*Leaf
@@ -232,10 +235,10 @@ func newMartini() *myMartini {
 }
 
 type logWriter struct {
-	ac appengine.Context
+	ac context.Context
 }
 
-func login(c appengine.Context, w http.ResponseWriter, r *http.Request) {
+func login(c context.Context, w http.ResponseWriter, r *http.Request) {
 	// TODO: check default page and redirect to page list without it
 
 	var postLogin string
@@ -250,17 +253,17 @@ func login(c appengine.Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func (w logWriter) Write(p []byte) (n int, err error) {
-	w.ac.Debugf(string(p))
+	applog.Debugf(w.ac, string(p))
 	return len(p), nil
 }
 
 func getViewPage(edit bool) interface{} {
-	return func(params martini.Params, u *user.User, c appengine.Context, w http.ResponseWriter, r *http.Request) {
+	return func(params martini.Params, u *user.User, c context.Context, w http.ResponseWriter, r *http.Request) {
 		renderPage(params["id"], u, c, w, r, edit)
 	}
 }
 
-func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWriter, r *http.Request, edit bool) {
+func renderPage(id string, u *user.User, c context.Context, w http.ResponseWriter, r *http.Request, edit bool) {
 
 	var pageKey *datastore.Key
 
@@ -336,7 +339,7 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 		logoutURL, err := user.LogoutURL(c, tparam.ViewURL)
 		if err != nil {
 			// only log
-			c.Warningf("cannot get logoutURL. err:%v", err)
+			applog.Warningf(c, "cannot get logoutURL. err:%v", err)
 		}
 		tparam.LogoutURL = logoutURL
 	}
@@ -372,7 +375,7 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 				tparam.Properties[hole.Name] = prop.Value
 			} else {
 				// TODO handle error
-				c.Errorf("%s", err)
+				applog.Errorf(c, "%s", err)
 			}
 		case AREA:
 			area, blocks, err := (<-futureAreas[hole.Name])()
@@ -398,7 +401,7 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 						pageID, err := strconv.ParseInt(url[1], 10, 64)
 						if err != nil {
 							// TODO handle error
-							c.Errorf("%s", err)
+							applog.Errorf(c, "%s", err)
 							continue
 						}
 
@@ -410,7 +413,7 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 						page, err := (<-ch)()
 						if err != nil {
 							// TODO handle error
-							c.Errorf("%s", err)
+							applog.Errorf(c, "%s", err)
 							continue
 						}
 						pageURLs[purl] = page.URLBase() + common.VIEW_PAGE_EXT
@@ -427,7 +430,7 @@ func renderPage(id string, u *user.User, c appengine.Context, w http.ResponseWri
 				tparam.Areas[hole.Name] = template.HTML(areasrc)
 			} else {
 				// TODO handle error
-				c.Errorf("%s", err)
+				applog.Errorf(c, "%s", err)
 			}
 		}
 	}
@@ -477,7 +480,7 @@ func renderBlock(global bool, areaID string, block model.Block, edit bool) strin
 	return s
 }
 
-func defaultPage(params martini.Params, u *user.User, c appengine.Context, w http.ResponseWriter, r *http.Request) {
+func defaultPage(params martini.Params, u *user.User, c context.Context, w http.ResponseWriter, r *http.Request) {
 
 	rpkey := model.NewRootPageKey(c)
 	var rp model.RootPage
@@ -493,7 +496,7 @@ func defaultPage(params martini.Params, u *user.User, c appengine.Context, w htt
 	renderPage(strconv.FormatInt(rp.PageID, 10), u, c, w, r, false)
 }
 
-func getPagePropertyAsync(c appengine.Context, key *datastore.Key) <-chan func() (*model.PageProperty, error) {
+func getPagePropertyAsync(c context.Context, key *datastore.Key) <-chan func() (*model.PageProperty, error) {
 	ch := make(chan func() (*model.PageProperty, error))
 	go func() {
 		var prop model.PageProperty
@@ -511,14 +514,14 @@ func getPagePropertyAsync(c appengine.Context, key *datastore.Key) <-chan func()
 	return ch
 }
 
-func getAreaAndBlocksAsync(c appengine.Context, pkey *datastore.Key, areaName string) <-chan func() (*model.Area, []model.Block, error) {
+func getAreaAndBlocksAsync(c context.Context, pkey *datastore.Key, areaName string) <-chan func() (*model.Area, []model.Block, error) {
 	ch := make(chan func() (*model.Area, []model.Block, error))
 	go func() {
 
 		var area model.Area
 		area.Key = model.NewAreaKey(c, areaName, pkey)
 
-		err := datastore.RunInTransaction(c, func(c appengine.Context) error {
+		err := datastore.RunInTransaction(c, func(c context.Context) error {
 			err := ds.Get(c, area.Key, &area)
 			if err != nil && errors.Root(err) == datastore.ErrNoSuchEntity {
 				// create if not exist
@@ -575,7 +578,7 @@ func getAreaAndBlocksAsync(c appengine.Context, pkey *datastore.Key, areaName st
 	return ch
 }
 
-func getHTMLBlockAsync(c appengine.Context, key *datastore.Key) <-chan func() (*model.HTMLBlock, error) {
+func getHTMLBlockAsync(c context.Context, key *datastore.Key) <-chan func() (*model.HTMLBlock, error) {
 	ch := make(chan func() (*model.HTMLBlock, error))
 	go func() {
 		var block model.HTMLBlock
@@ -593,7 +596,7 @@ func getHTMLBlockAsync(c appengine.Context, key *datastore.Key) <-chan func() (*
 	return ch
 }
 
-func getPageAsync(c appengine.Context, key *datastore.Key) <-chan func() (*model.Page, error) {
+func getPageAsync(c context.Context, key *datastore.Key) <-chan func() (*model.Page, error) {
 	ch := make(chan func() (*model.Page, error))
 	go func() {
 		var p model.Page
@@ -611,9 +614,9 @@ func getPageAsync(c appengine.Context, key *datastore.Key) <-chan func() (*model
 	return ch
 }
 
-func handleError(c appengine.Context, w http.ResponseWriter, err error, code int) {
+func handleError(c context.Context, w http.ResponseWriter, err error, code int) {
 	if e, ok := err.(errors.Error); ok {
-		c.Errorf(e.ErrorWithStackTrace())
+		applog.Errorf(c, e.ErrorWithStackTrace())
 	}
 	http.Error(w, err.Error(), code)
 }

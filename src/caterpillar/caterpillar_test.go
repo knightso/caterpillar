@@ -1,9 +1,10 @@
 package caterpillar
 
 import (
-	"testing"
-	"appengine/aetest"
 	"reflect"
+	"testing"
+
+	"google.golang.org/appengine/aetest"
 )
 
 //func parseWormhole(s string) (*Wormhole, string) {
@@ -19,7 +20,7 @@ func TestParseWormhole1(t *testing.T) {
 		t.Errorf("wh is nil")
 	}
 
-	if !reflect.DeepEqual(*wh, Wormhole {
+	if !reflect.DeepEqual(*wh, Wormhole{
 		"hoge",
 		"",
 		false,
@@ -45,7 +46,7 @@ func TestParseWormhole2(t *testing.T) {
 		t.Errorf("wh is nil")
 	}
 
-	if !reflect.DeepEqual(*wh, Wormhole {
+	if !reflect.DeepEqual(*wh, Wormhole{
 		"Moke",
 		"もけ",
 		true,
@@ -58,4 +59,3 @@ func TestParseWormhole2(t *testing.T) {
 		t.Errorf("illegal rpl: %s\n", rpl)
 	}
 }
-

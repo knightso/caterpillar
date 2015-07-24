@@ -1,20 +1,21 @@
 package model
 
 import (
-	"appengine"
-	"appengine/datastore"
-	"github.com/knightso/base/gae/ds"
 	"caterpillar/common"
 	"strconv"
 	"strings"
+
+	"github.com/knightso/base/gae/ds"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
 )
 
 const KIND_PAGE = "Page"
 
 type Page struct {
-	Name  string         `json:"name"`
-	Alias string         `json:"alias"`
-	Leaf  string         `json:"leaf"`
+	Name  string `json:"name"`
+	Alias string `json:"alias"`
+	Leaf  string `json:"leaf"`
 	ds.Meta
 }
 
@@ -32,11 +33,11 @@ func (p *Page) URLBase() string {
 	return url
 }
 
-func NewPageKey(c appengine.Context, id int64) *datastore.Key {
+func NewPageKey(c context.Context, id int64) *datastore.Key {
 	return datastore.NewKey(c, KIND_PAGE, "", id, nil)
 }
 
-func GeneratePageID(c appengine.Context) (*datastore.Key, error) {
+func GeneratePageID(c context.Context) (*datastore.Key, error) {
 	intID, err := ds.GenerateID(c, KIND_PAGE)
 	if err != nil {
 		return nil, err
@@ -44,7 +45,7 @@ func GeneratePageID(c appengine.Context) (*datastore.Key, error) {
 	return datastore.NewKey(c, KIND_PAGE, "", intID, nil), nil
 }
 
-func NewGlobalPageKey(c appengine.Context) *datastore.Key {
+func NewGlobalPageKey(c context.Context) *datastore.Key {
 	return datastore.NewKey(c, KIND_PAGE, "Global", 0, nil)
 }
 
@@ -82,18 +83,18 @@ type PageAlias struct {
 	ds.Meta
 }
 
-func NewPageAliasKey(c appengine.Context, alias string) *datastore.Key {
+func NewPageAliasKey(c context.Context, alias string) *datastore.Key {
 	return datastore.NewKey(c, KIND_PAGE_ALIAS, alias, 0, nil)
 }
 
 const KIND_PAGE_PROPERTY = "PageProperty"
 
 type PageProperty struct {
-	Value string         `json:"value"`
+	Value string `json:"value"`
 	ds.Meta
 }
 
-func NewPagePropertyKey(c appengine.Context, name string, pageKey *datastore.Key) *datastore.Key {
+func NewPagePropertyKey(c context.Context, name string, pageKey *datastore.Key) *datastore.Key {
 	return datastore.NewKey(c, KIND_PAGE_PROPERTY, name, 0, pageKey)
 }
 
@@ -105,7 +106,7 @@ type Area struct {
 	ds.Meta
 }
 
-func NewAreaKey(c appengine.Context, name string, pageKey *datastore.Key) *datastore.Key {
+func NewAreaKey(c context.Context, name string, pageKey *datastore.Key) *datastore.Key {
 	return datastore.NewKey(c, KIND_AREA, name, 0, pageKey)
 }
 
@@ -116,15 +117,15 @@ type Block interface {
 const KIND_HTML_BLOCK = "HTMLBlock"
 
 type HTMLBlock struct {
-	Value string         `datastore:",noindex" json:"value"`
+	Value string `datastore:",noindex" json:"value"`
 	ds.Meta
 }
 
-func NewHTMLBlockKey(c appengine.Context, id int64, areaKey *datastore.Key) *datastore.Key {
+func NewHTMLBlockKey(c context.Context, id int64, areaKey *datastore.Key) *datastore.Key {
 	return datastore.NewKey(c, KIND_HTML_BLOCK, "", id, areaKey)
 }
 
-func NewHTMLBlockIncompleteKey(c appengine.Context, areaKey *datastore.Key) *datastore.Key {
+func NewHTMLBlockIncompleteKey(c context.Context, areaKey *datastore.Key) *datastore.Key {
 	return datastore.NewIncompleteKey(c, KIND_HTML_BLOCK, areaKey)
 }
 
@@ -139,17 +140,17 @@ type HTMLBlockBackup struct {
 	HTMLBlock
 }
 
-func NewHTMLBlockBackupKey(c appengine.Context, uuid string) *datastore.Key {
+func NewHTMLBlockBackupKey(c context.Context, uuid string) *datastore.Key {
 	return datastore.NewKey(c, KIND_HTML_BLOCK_BACKUP, uuid, 0, nil)
 }
 
 const KIND_ROOT_PAGE = "RootPage"
 
 type RootPage struct {
-	PageID int64          `json:"pageId"`
+	PageID int64 `json:"pageId"`
 	ds.Meta
 }
 
-func NewRootPageKey(c appengine.Context) *datastore.Key {
+func NewRootPageKey(c context.Context) *datastore.Key {
 	return datastore.NewKey(c, KIND_ROOT_PAGE, "Root", 0, nil)
 }
