@@ -9,18 +9,19 @@ import (
 	"google.golang.org/appengine/log"
 )
 
-// GCSに保存された画像の公開URLを取得します。
+// GetServingURL gets URL to serve GCS file to users.
 func GetServingURL(c context.Context, filename string) (servingURL *url.URL, err error) {
+
 	blobKey, err := blobstore.BlobKeyForFile(c, filename)
 	if err != nil {
-		log.Errorf(c, "serve.go:14: %s", err.Error())
+		log.Errorf(c, "error for file %s:  %s", filename, err.Error())
 		return nil, err
 	}
 
 	opts := &image.ServingURLOptions{Secure: true}
 	servingURL, err = image.ServingURL(c, blobKey, opts)
 	if err != nil {
-		log.Errorf(c, "serve.go:25: %s", err.Error())
+		log.Errorf(c, "failed to get serving URL: %s", err.Error())
 		return nil, err
 	}
 
