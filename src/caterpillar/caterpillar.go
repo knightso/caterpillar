@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -38,6 +39,8 @@ const MNG_ROOT_URL = "/caterpillar/static/mng/"
 
 var pageUrlRegex = regexp.MustCompile(`caterpillar://(\d+)`)
 
+var cacheMaxAge = 0
+
 const CTPLR_TMPL_REPL = `{{if .User}}{{template "CATERPILLAR" .}}{{end}}`
 
 type Leaf struct {
@@ -62,6 +65,13 @@ type Wormhole struct {
 }
 
 func init() {
+
+	if v := os.Getenv("CACHE_MAX_AGE"); v != "" {
+		cacheMaxAge, err = strconv.Atoi(v)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	// set memcache
 	ds.DefaultCache = true
@@ -333,7 +343,8 @@ func renderPage(id string, u *user.User, c context.Context, w http.ResponseWrite
 		tparam.PagesURL = "/caterpillar/static/mng/#/queryPage"
 
 		purl := p.URLBase()
-		tparam.ViewURL = purl + common.VIEW_PAGE_EXT
+		cb := time.Now().Format("20060102150405999999999")
+		tparam.ViewURL = purl + common.VIEW_PAGE_EXT + "?cb=" + cb
 		tparam.EditURL = purl + common.EDIT_PAGE_EXT
 
 		logoutURL, err := user.LogoutURL(c, tparam.ViewURL)
@@ -441,6 +452,11 @@ func renderPage(id string, u *user.User, c context.Context, w http.ResponseWrite
 
 	// TODO: resolve charset from somewhere
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	if edit && maxAge > 0 {
+		applog.Debugf(w.ac, "setting cache control. max-age=%d", cacheMaxAge)
+		w.Header().Set("Cache-Control", "public, max-age="+strconv.Itoa(cacheMaxAge))
+	}
 
 	if err = leaf.Template.Execute(w, tparam); err != nil {
 		handleError(c, w, err, http.StatusInternalServerError)
