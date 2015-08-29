@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"caterpillar/model"
+
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/go-martini/martini"
 	"github.com/knightso/base/errors"

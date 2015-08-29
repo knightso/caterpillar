@@ -53,12 +53,17 @@ func GetParentKey(c context.Context) *datastore.Key {
 	return datastore.NewKey(c, KIND_FILE, "/", 0, nil)
 }
 
-func NewFileKey(c context.Context, parentKey *datastore.Key) *datastore.Key {
-	return datastore.NewIncompleteKey(c, KIND_FILE, parentKey)
+func NewFileKey(c context.Context) (*datastore.Key, error) {
+	parentKey := GetParentKey(c)
+	lowID, _, err := datastore.AllocateIDs(c, KIND_FILE, parentKey, 1)
+	if err != nil {
+		return nil, err
+	}
+	return datastore.NewKey(c, KIND_FILE, "", lowID, parentKey), nil
 }
 
 // アップロードされた画像のメタデータをDSに保存します。
-func StoreImage(c context.Context, servingURL, fileName, gcsPath string) error {
+func StoreImage(c context.Context, key *datastore.Key, servingURL, fileName, gcsPath string) error {
 	e := File{
 		ServingURL: servingURL,
 		FileName:   fileName,
@@ -66,7 +71,7 @@ func StoreImage(c context.Context, servingURL, fileName, gcsPath string) error {
 		Type:       IMAGE,
 	}
 
-	e.Key = NewFileKey(c, GetParentKey(c))
+	e.Key = key
 	if err := ds.Put(c, &e); err != nil {
 		return err
 	}
