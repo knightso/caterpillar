@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 
 	"google.golang.org/appengine"
 )
@@ -54,7 +55,15 @@ func UploadHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	absFilename, err := Store(c, data, fileHeader.Filename, mimeType, bucketName)
+	fileKey, err := NewFileKey(c)
+	if err != nil {
+		rw.WriteHeader(500)
+		fmt.Fprintln(rw, err.Error())
+		return
+	}
+
+	gcsFileName := fmt.Sprintf("%d%s", fileKey.IntID(), filepath.Ext(fileHeader.Filename))
+	absFilename, err := Store(c, data, gcsFileName, mimeType, bucketName)
 	if err != nil {
 		rw.WriteHeader(500)
 		fmt.Fprintln(rw, err.Error())
@@ -68,7 +77,7 @@ func UploadHandler(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = StoreImage(c, servingURL.String(), fileHeader.Filename, absFilename)
+	err = StoreImage(c, fileKey, servingURL.String(), fileHeader.Filename, absFilename)
 	if err != nil {
 		rw.WriteHeader(500)
 		fmt.Fprintln(rw, err.Error())
