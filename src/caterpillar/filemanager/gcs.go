@@ -2,16 +2,10 @@ package filemanager
 
 import (
 	"fmt"
-	"net/http"
 
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/file"
 	"google.golang.org/appengine/log"
-	"google.golang.org/appengine/urlfetch"
-	"google.golang.org/cloud"
 	"google.golang.org/cloud/storage"
 )
 
@@ -25,20 +19,14 @@ func Store(c context.Context, data []byte, fileName, mimeType, bucketName string
 		}
 	}
 
-	hc := &http.Client{
-		Transport: &oauth2.Transport{
-			Source: google.AppEngineTokenSource(c, storage.ScopeFullControl),
-			// Note that the App Engine urlfetch service has a limit of 10MB uploads and
-			// 32MB downloads.
-			// See https://cloud.google.com/appengine/docs/go/urlfetch/#Go_Quotas_and_limits
-			// for more information.
-			Base: &urlfetch.Transport{Context: c},
-		},
+	client, err := storage.NewClient(c)
+	if err != nil {
+		log.Errorf(c, "failed to create storage client: %v", err)
+		return "", err
 	}
+	defer client.Close()
 
-	ctx := cloud.NewContext(appengine.AppID(c), hc)
-
-	wc := storage.NewWriter(ctx, bucketName, fileName)
+	wc := client.Bucket(bucketName).Object(fileName).NewWriter(c)
 	wc.ContentType = mimeType
 
 	if _, err := wc.Write(data); err != nil {
