@@ -11,10 +11,10 @@ import (
 
 	"caterpillar/model"
 
-	"code.google.com/p/go-uuid/uuid"
 	"github.com/go-martini/martini"
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
+	"github.com/pborman/uuid"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
