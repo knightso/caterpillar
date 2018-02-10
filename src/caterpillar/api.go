@@ -14,7 +14,7 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
-	"github.com/pborman/uuid"
+	"github.com/satori/go.uuid"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -374,7 +374,7 @@ func saveBlocks(params martini.Params, w http.ResponseWriter, r *http.Request) {
 
 			// save backup entity when HTMLBlock saved.
 			blocks := []*model.HTMLBlock{&block}
-			backupHTMLBlockFunc.Call(c, uuid.New(), blocks)
+			backupHTMLBlockFunc.Call(c, uuid.Must(uuid.NewV4()).String(), blocks)
 		}
 		return nil
 	}, &datastore.TransactionOptions{XG: true})

@@ -3,10 +3,11 @@ package filemanager
 import (
 	"fmt"
 
+	"cloud.google.com/go/storage"
+	"github.com/knightso/base/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/file"
 	"google.golang.org/appengine/log"
-	"google.golang.org/cloud/storage"
 )
 
 // Store binary data to GCS
@@ -22,7 +23,7 @@ func Store(c context.Context, data []byte, fileName, mimeType, bucketName string
 	client, err := storage.NewClient(c)
 	if err != nil {
 		log.Errorf(c, "failed to create storage client: %v", err)
-		return "", err
+		return "", errors.WrapOr(err)
 	}
 	defer client.Close()
 
