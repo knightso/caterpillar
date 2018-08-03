@@ -9,11 +9,11 @@ import (
 
 //func parseWormhole(s string) (*Wormhole, string) {
 func TestParseWormhole1(t *testing.T) {
-	c, err := aetest.NewContext(nil)
+	_, done, err := aetest.NewContext()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer c.Close()
+	defer done()
 
 	wh, rpl := parseWormhole(`[[hoge]]`)
 	if wh == nil {
@@ -35,11 +35,11 @@ func TestParseWormhole1(t *testing.T) {
 }
 
 func TestParseWormhole2(t *testing.T) {
-	c, err := aetest.NewContext(nil)
+	_, done, err := aetest.NewContext()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer c.Close()
+	defer done()
 
 	wh, rpl := parseWormhole(`[[.Moke  もけ]]`)
 	if wh == nil {
