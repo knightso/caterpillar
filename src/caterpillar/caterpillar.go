@@ -3,6 +3,7 @@ package caterpillar
 import (
 	"caterpillar/common"
 	"caterpillar/model"
+	"context"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -19,7 +20,6 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	applog "google.golang.org/appengine/log"

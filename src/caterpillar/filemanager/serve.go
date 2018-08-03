@@ -1,9 +1,9 @@
 package filemanager
 
 import (
+	"context"
 	"net/url"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/blobstore"
 	"google.golang.org/appengine/image"
 	"google.golang.org/appengine/log"
