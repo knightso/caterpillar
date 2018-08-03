@@ -1,12 +1,12 @@
 package filemanager
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
 
 	"github.com/knightso/base/gae/ds"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )

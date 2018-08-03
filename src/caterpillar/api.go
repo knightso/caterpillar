@@ -1,6 +1,7 @@
 package caterpillar
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
 	"github.com/satori/go.uuid"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/delay"
