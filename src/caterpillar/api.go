@@ -13,9 +13,9 @@ import (
 	"caterpillar/model"
 
 	"github.com/go-martini/martini"
+	"github.com/google/uuid"
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
-	"github.com/satori/go.uuid"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/delay"
@@ -374,7 +374,7 @@ func saveBlocks(params martini.Params, w http.ResponseWriter, r *http.Request) {
 
 			// save backup entity when HTMLBlock saved.
 			blocks := []*model.HTMLBlock{&block}
-			backupHTMLBlockFunc.Call(c, uuid.Must(uuid.NewV4()).String(), blocks)
+			backupHTMLBlockFunc.Call(c, uuid.New().String(), blocks)
 		}
 		return nil
 	}, &datastore.TransactionOptions{XG: true})
