@@ -1,12 +1,12 @@
 package model
 
 import (
-	"caterpillar/common"
 	"context"
 	"strconv"
 	"strings"
 
 	"github.com/knightso/base/gae/ds"
+	"github.com/knightso/caterpillar/src/caterpillar/common"
 	"google.golang.org/appengine/datastore"
 )
 
