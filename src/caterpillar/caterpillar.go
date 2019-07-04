@@ -168,8 +168,6 @@ func Start() {
 		r.Put("", putRootPage)
 	})
 
-	m.NotFound(martini.Static("static"))
-
 	http.Handle("/", m)
 
 	appengine.Main()

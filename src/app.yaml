@@ -32,7 +32,11 @@ handlers:
   script: auto
   login: admin
 
-- url: /.*
+- url: /(.+)
+  static_files: static/\1
+  upload: static/.*
+
+- url: /
   script: auto
 
 
