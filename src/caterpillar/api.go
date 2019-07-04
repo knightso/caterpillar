@@ -10,12 +10,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"caterpillar/model"
-
 	"github.com/go-martini/martini"
 	"github.com/google/uuid"
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
+	"github.com/knightso/caterpillar/src/caterpillar/model"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/delay"

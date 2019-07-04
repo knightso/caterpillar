@@ -1,8 +1,6 @@
 package caterpillar
 
 import (
-	"caterpillar/common"
-	"caterpillar/model"
 	"context"
 	"fmt"
 	"html/template"
@@ -20,6 +18,8 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
+	"github.com/knightso/caterpillar/src/caterpillar/common"
+	"github.com/knightso/caterpillar/src/caterpillar/model"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	applog "google.golang.org/appengine/log"
@@ -61,7 +61,7 @@ type Wormhole struct {
 	Type   WormholeType `json:"type"`
 }
 
-func init() {
+func Start() {
 
 	// set memcache
 	ds.DefaultCache = true
@@ -169,6 +169,8 @@ func init() {
 	})
 
 	http.Handle("/", m)
+
+	appengine.Main()
 }
 
 func parseWormhole(s string) (*Wormhole, string) {
