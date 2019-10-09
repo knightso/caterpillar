@@ -19,6 +19,7 @@ import (
 	"github.com/knightso/base/errors"
 	"github.com/knightso/base/gae/ds"
 	"github.com/knightso/caterpillar/src/caterpillar/common"
+	_ "github.com/knightso/caterpillar/src/caterpillar/filemanager"
 	"github.com/knightso/caterpillar/src/caterpillar/model"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
