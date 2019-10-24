@@ -272,7 +272,7 @@ func putRootPage(c context.Context, w http.ResponseWriter, r *http.Request) {
 
 	rootPageKey := model.NewRootPageKey(c)
 
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err := ds.RunInTransaction(c, func(c context.Context) error {
 		var rp2put model.RootPage
 		if err := ds.Get(c, rootPageKey, &rp2put); err != nil {
 			if errors.Root(err) != datastore.ErrNoSuchEntity {
@@ -324,7 +324,7 @@ func saveBlocks(params martini.Params, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = datastore.RunInTransaction(c, func(c context.Context) error {
+	err = ds.RunInTransaction(c, func(c context.Context) error {
 		// TODO make async
 		for id, value := range b {
 			log.Infof(c, "saving block. id:%s, value:%s", id, value)
@@ -410,7 +410,7 @@ func getRequestJson(w http.ResponseWriter, r *http.Request, p interface{}) error
 
 func savePage(c context.Context, pageKey *datastore.Key, p *model.Page, props map[string]string) error {
 
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err := ds.RunInTransaction(c, func(c context.Context) error {
 		var p2 model.Page
 		if !pageKey.Incomplete() {
 			if err := ds.Get(c, pageKey, &p2); err != nil {
