@@ -524,7 +524,7 @@ func getAreaAndBlocksAsync(c context.Context, pkey *datastore.Key, areaName stri
 		var area model.Area
 		area.Key = model.NewAreaKey(c, areaName, pkey)
 
-		err := datastore.RunInTransaction(c, func(c context.Context) error {
+		err := ds.RunInTransaction(c, func(c context.Context) error {
 			err := ds.Get(c, area.Key, &area)
 			if err != nil && errors.Root(err) == datastore.ErrNoSuchEntity {
 				// create if not exist
