@@ -88,6 +88,10 @@
 	// W3C DOCイベントモデルサポートブラウザのみ対応 FireFox, Chrome, Safari, Opera, IE9 ～
 	window.addEventListener('load', function() {
 		var submitButton = document.getElementById('ctpl_edit_submit');
+		if (!submitButton) {
+			return;
+		}
+
 		submitButton.addEventListener('click', function(evt) {
 			var blocks = {
 			};
