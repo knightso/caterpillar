@@ -104,8 +104,10 @@
 			}
 			if (!edited) {
 				// TODO disable save button until modified.
-				window.alert('修正されていません。');
-				return;
+
+				// 不評なのでエラーにはしない
+				// window.alert('修正されていません。');
+				// return;
 			}
 
 			tinymce.util.XHR.send({
